@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion du Stock - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
+    <h2 class="fw-bold"><i class="bi bi-box-seam text-warning"></i> Gestion du Stock</h2>
+    <div class="d-flex flex-wrap gap-2 w-100 stock-actions">
+        <a class="btn btn-warning btn-sm rounded-pill shadow-sm px-4" href="{% url 'produit_create' %}">Ajouter produit</a>
+        <a class="btn btn-outline-warning btn-sm rounded-pill shadow-sm px-4" href="{% url 'mouvements_stock_html' %}">Mouvements</a>
+        <a class="btn btn-outline-warning btn-sm rounded-pill shadow-sm px-4" href="{% url 'lignes_commandes_html' %}">Lignes commandes</a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="p-3">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row g-3">
+                {% for item in stocks %}
+                <div class="col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100 shadow-sm stock-card">
+                        {% if item.Produits_id.image %}
+                        <img src="{{ item.Produits_id.image.url }}" class="card-img-top object-fit-cover" style="height:140px;" alt="{{ item.Produits_id.nom }}">
+                        {% else %}
+                        <div class="placeholder-glow bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style="height:140px;">
+                            <i class="bi bi-camera-fill fs-2 text-secondary"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">{{ item.Produits_id.nom }}</h6>
+                                    <div class="text-muted small">{{ item.Produits_id.Genres }} • {{ item.Produits_id.Cathegories }}</div>
+                                </div>
+                                <div>
+                                    {% if item.Quantité_actuel > item.Seuil_alert %}
+                                        <span class="badge bg-success">En stock</span>
+                                    {% elif item.Quantité_actuel > 0 %}
+                                        <span class="badge bg-warning text-dark">Stock bas</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Rupture</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mt-3 mb-2">
+                                <div class="d-flex justify-content-between align-items-center small text-muted">
+                                    <div>Quantité</div>
+                                    <div class="fw-bold">{{ item.Quantité_actuel }}</div>
+                                </div>
+                                <div class="progress mt-1" style="height:8px; border-radius:6px; overflow:hidden;">
+                                    {% comment %} Simple visual: width proportional to quantity capped at 100 {% endcomment %}
+                                    {% if item.Quantité_actuel >= 100 %}
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width:100%"></div>
+                                    {% else %}
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width:{{ item.Quantité_actuel }}%"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mt-auto d-flex gap-2 stock-card-actions">
+                                <form method="post" action="{% url 'stock_increment' item.id %}" class="d-flex align-items-center w-100 stock-increment-form">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantite" min="1" value="1" class="form-control form-control-sm me-2" style="width:90px">
+                                    <button class="btn btn-sm btn-success w-100" title="Ajouter au stock"><i class="bi bi-plus-lg me-1"></i> Ajouter</button>
+                                </form>
+
+                                <form method="post" action="{% url 'stock_delete' item.id %}" onsubmit="return confirm('Confirmer la suppression du produit et du stock ?');">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger" title="Supprimer le produit"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-box-seam fs-1 mb-2"></i>
+                        <div class="fw-bold">Aucun article dans le stock.</div>
+                        <div class="small">Ajoutez de nouveaux produits pour les voir apparaître ici.</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stock-card { border-radius: 12px; overflow: hidden; }
+    .stock-card .card-body { padding: 12px; }
+    .object-fit-cover { object-fit: cover; width:100%; }
+    .stock-card:hover { transform: translateY(-4px); transition: all 0.18s ease; box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+    .placeholder-glow { border-radius: 6px; }
+    @media (min-width: 992px) { .stock-actions { width: auto !important; } }
+    @media (max-width: 575.98px) {
+        .stock-actions .btn { flex: 1 1 100%; }
+        .stock-card-actions { align-items: stretch; }
+        .stock-increment-form { flex-wrap: wrap; gap: 0.5rem; }
+        .stock-increment-form input { width: 100% !important; margin-right: 0 !important; }
+    }
+</style>
+{% endblock %}

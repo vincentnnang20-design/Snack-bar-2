@@ -1,0 +1,55 @@
+{% extends 'clients/client_base.html' %}
+
+{% block title %}Commande confirmée — FriscoClub{% endblock %}
+
+{% block content %}
+<div class="text-center py-4">
+    <i class="bi bi-check-circle-fill text-success display-3 mb-3 d-block"></i>
+    <h5 class="fw-bold mb-2">Commande confirmée !</h5>
+    <p class="text-muted small mb-1">Commande N° {{ commande.id }}</p>
+    <p class="text-muted small mb-3">Un serveur va bientôt prendre en charge votre table.</p>
+
+    <div class="bg-white rounded-4 p-3 shadow-sm text-start mb-3">
+        <div class="d-flex align-items-center gap-2">
+            {% if commande.mode_paiement == 'numerique' %}
+                <i class="bi bi-phone-fill text-warning"></i>
+                <div>
+                    <div class="fw-bold small">Paiement numérique — {{ commande.get_operateur_paiement_display }}</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">
+                        Numéro : {{ commande.numero_paiement }} ·
+                        {% if commande.statut_paiement == 'payee' %}
+                            <span class="text-success fw-bold">Payée</span>
+                        {% else %}
+                            <span class="text-warning fw-bold">En attente de confirmation</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <i class="bi bi-cash-coin text-success"></i>
+                <div>
+                    <div class="fw-bold small">Paiement en espèces</div>
+                    <div class="text-muted" style="font-size: 0.72rem;">À régler au comptoir</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-4 p-3 shadow-sm text-start mb-4">
+        {% for ligne in commande.lignecommandes_set.all %}
+        <div class="d-flex justify-content-between small mb-1">
+            <span>{{ ligne.Produits_id.nom }} × {{ ligne.Quantité }}</span>
+            <span class="fw-bold">{{ ligne.Sous_Total }} FCFA</span>
+        </div>
+        {% endfor %}
+        <hr class="my-2">
+        <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span class="text-success">{{ commande.Montant_Total }} FCFA</span>
+        </div>
+    </div>
+
+    <a href="{% url 'client_home' %}" class="btn btn-warning w-100 fw-bold rounded-3 py-2">
+        <i class="bi bi-house-door-fill me-1"></i> Retour à l'accueil
+    </a>
+</div>
+{% endblock %}

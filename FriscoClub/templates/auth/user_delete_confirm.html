@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmer suppression{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card p-3 shadow-sm">
+        <h4>Confirmer la suppression</h4>
+        <p>Voulez-vous vraiment supprimer l'utilisateur <strong>{{ user_obj.username }}</strong> ? Cette action est irréversible.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-danger">Supprimer</button>
+            <a href="{% url 'user_management' %}" class="btn btn-outline-secondary">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

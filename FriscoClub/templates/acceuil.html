@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Accueil - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- BANNIÈRE HERO -->
+    <div class="hero-section p-4 p-md-5 mb-4 mb-md-5 bg-dark text-white rounded-4 shadow-lg position-relative overflow-hidden" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+        <div class="row align-items-center">
+            <div class="col-lg-8 py-3">
+                <span class="badge bg-warning text-dark fw-bold mb-3 px-3 py-2 text-uppercase">
+                    <i class="bi bi-star-fill me-1"></i> Bar & Snack Lounge
+                </span>
+                    <h1 class="hero-title display-4 fw-bold mb-3">Bienvenue au <span class="text-warning">FriscoClub</span></h1>
+                <p class="lead opacity-75 mb-4">
+                    Découvrez une expérience unique. Parcourez nos boissons fraîches, nos sélections premium et passez votre commande en quelques clics.
+                </p>
+                <a href="{% url 'catalogue' %}" class="btn btn-warning btn-lg fw-bold px-4 py-3 shadow">
+                    <i class="bi bi-cup-straw me-2"></i> Voir toute la Carte
+                </a>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-center">
+                <i class="bi bi-glass-rhum text-warning opacity-50" style="font-size: 8rem;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- RACCOURCIS PAR CATÉGORIES -->
+    <div class="mb-5">
+        <h3 class="fw-bold mb-4"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i> Nos Catégories</h3>
+        <div class="row g-4">
+            {% for cat in categories %}
+            <div class="col-md-6">
+                <div class="card bg-light border-0 shadow-sm h-100">
+                    <div class="card-body p-4 d-flex justify-content-between align-items-center gap-3 home-category-card">
+                        <div>
+                            <h4 class="fw-bold mb-1">{{ cat }}</h4>
+                            <p class="text-muted mb-3">Toutes nos boissons {{ cat|lower }}s.</p>
+                            <a href="{% url 'catalogue' %}?categorie={{ cat }}" class="btn btn-sm btn-outline-dark fw-bold">
+                                Explorer <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        <i class="bi bi-cup-hot display-3 text-warning opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- SECTION NOUVEAUTÉS ANIMÉE (MODE PROFESSIONNEL) -->
+    <div class="mb-5">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 border-bottom pb-3 mb-4">
+            <h3 class="fw-bold mb-0"><i class="bi bi-fire text-danger me-2"></i> Nos Nouveautés</h3>
+            <a href="{% url 'catalogue' %}" class="btn btn-link text-warning fw-bold text-decoration-none">
+                Voir tout le catalogue <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <!-- Conteneur du Slider Premium -->
+        <div id="premium-products-slider" class="splide" aria-label="Nouveautés FriscoClub">
+            <div class="splide__track">
+                <ul class="splide__list">
+                    {% for produit in nouveautes %}
+                    <li class="splide__slide p-2">
+                        <div class="card h-100 border-0 shadow-lg overflow-hidden rounded-4 position-relative">
+                            
+                            <!-- Palette Image Agrandie -->
+                            <div class="position-relative overflow-hidden" style="height: 280px; background-color: #f8f9fa;">
+                                {% if produit.image %}
+                                    <img src="{{ produit.image.url }}" class="w-100 h-100 object-fit-cover transition-transform" alt="{{ produit.nom }}" style="transition: transform 0.5s ease;">
+                                {% else %}
+                                    <div class="bg-dark text-muted d-flex align-items-center justify-content-center h-100">
+                                        <i class="bi bi-image display-3"></i>
+                                    </div>
+                                {% endif %}
+                                <span class="position-absolute top-0 start-0 m-3 badge bg-dark bg-opacity-75 text-warning px-3 py-2 border border-warning border-opacity-20 fs-7">
+                                    {{ produit.Genres }}
+                                </span>
+                            </div>
+
+                            <!-- Infos Produit -->
+                            <div class="card-body d-flex flex-column justify-content-between bg-white p-4">
+                                <div>
+                                    <h4 class="fw-bold text-dark mb-2">{{ produit.nom }}</h4>
+                                    <p class="text-success fw-bold fs-4 mb-3">{{ produit.Prix_vente }} <span class="fs-6 text-muted">FCFA</span></p>
+                                </div>
+                                
+                                <a href="{% url 'cart_add' produit.id %}" class="btn btn-warning w-100 fw-bold py-2 rounded-3 shadow-sm transition-all">
+                                    <i class="bi bi-cart-plus me-2"></i> Ajouter au panier
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="w-100 text-muted text-center py-5">Aucune nouveauté disponible pour le moment.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INCLUSION DES DEPENDANCES DE STYLE ET D'ANIMATION (SPLIDE.JS) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+
+<!-- INITIALISATION DU CURSEUR ANIMÉ -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.querySelector('#premium-products-slider')) {
+            new Splide('#premium-products-slider', {
+                type   : 'loop',
+                drag   : 'free',
+                focus  : 'center',
+                perPage: 3,
+                gap    : '2rem',
+                autoplay: true,
+                interval: 3500,
+                speed: 800,
+                pagination: true,
+                arrows: true,
+                breakpoints: {
+                    992: { perPage: 2, gap: '1rem' },
+                    576: { perPage: 1, gap: '0.5rem' }
+                }
+            }).mount();
+        }
+    });
+</script>
+
+<style>
+    .card:hover img { transform: scale(1.06); }
+    .splide__arrow { background: #212529 !important; opacity: 0.8; }
+    .splide__arrow svg { fill: #ffc107 !important; }
+    .splide__pagination__page.is-active { background: #ffc107 !important; }
+    .fs-7 { font-size: 0.8rem; }
+    @media (max-width: 575.98px) {
+        .hero-title { font-size: 2.2rem; }
+        .hero-section .btn { width: 100%; }
+        .home-category-card { align-items: flex-start !important; }
+        .home-category-card > i { font-size: 2.25rem !important; }
+        .splide__arrow { display: none; }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon Panier - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <h2 class="fw-bold mb-4">
+        <i class="bi bi-cart3 text-warning me-2"></i>Mon Panier
+    </h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div id="cart-ajax-alert" class="alert alert-danger d-none" role="alert"></div>
+
+    {% if cart|length %}
+    <div class="row g-4">
+        <!-- Tableau des articles -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="ps-3" style="width: 70px;">Image</th>
+                                    <th>Produit</th>
+                                    <th>Prix unitaire</th>
+                                    <th style="width: 140px;">Quantité</th>
+                                    <th>Sous-Total</th>
+                                    <th class="text-center" style="width: 80px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in cart %}
+                                <!-- Ajout de classes et de datasets pour le contrôle JavaScript -->
+                                <tr class="produit-row" data-produit-id="{{ item.produit.id }}" data-prix-unitaire="{{ item.prix }}">
+                                    <!-- Image Miniature -->
+                                    <td class="ps-3">
+                                        {% if item.produit.image %}
+                                            <img src="{{ item.produit.image.url }}" alt="{{ item.produit.nom }}" class="rounded object-fit-cover" style="width: 45px; height: 45px;">
+                                        {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 45px; height: 45px;">
+                                                <i class="bi bi-cup-straw"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Nom du Produit -->
+                                    <td class="fw-bold">{{ item.produit.nom }}</td>
+
+                                    <!-- Prix Unitaire -->
+                                    <td>{{ item.prix }} FCFA</td>
+
+                                    <!-- Formulaire de Modification de Quantité -->
+                                    <td>
+                                        <form action="{% url 'cart_update' item.produit.id %}" method="post" class="d-flex align-items-center gap-1 cart-update-form">
+                                            {% csrf_token %}
+                                            <!-- Ajout de la classe input-quantite -->
+                                            <input type="number" name="quantite" value="{{ item.quantite }}" min="1" class="form-control form-control-sm text-center fw-bold input-quantite" style="width: 65px;">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary d-none d-sm-inline" title="Mettre à jour">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+
+                                    <!-- Sous-Total avec classe et id pour ciblage précis -->
+                                    <td class="fw-bold text-success">
+                                        <span class="sous-total-valeur">{{ item.total_prix }}</span> FCFA
+                                    </td>
+
+                                    <!-- Bouton Supprimer -->
+                                    <td class="text-center">
+                                        <a href="{% url 'cart_remove' item.produit.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer du panier">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Résumé de la commande -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-dark text-white fw-bold py-3">
+                    <i class="bi bi-receipt me-2 text-warning"></i>Récapitulatif
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fs-5 fw-bold">Total Général :</span>
+                        <span class="fs-4 fw-bold text-success">
+                            <!-- Ajout de l'id total-panier -->
+                            <span id="total-panier">{{ cart.get_total_price }}</span> FCFA
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'checkout' %}" class="btn btn-warning btn-lg fw-bold shadow-sm py-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>Valider la commande
+                        </a>
+                        <a href="{% url 'catalogue' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Continuer mes achats
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Panier Vide -->
+    <div class="card border-0 shadow-sm text-center py-5">
+        <div class="card-body">
+            <i class="bi bi-cart-x display-1 text-warning opacity-75"></i>
+            <h3 class="mt-3 fw-bold">Votre panier est vide</h3>
+            <p class="text-muted mb-4">Votre panier ne contient aucun produit. Ajoutez des articles depuis la carte pour commencer votre commande.</p>
+            <a href="{% url 'catalogue' %}" class="btn btn-warning btn-lg rounded-pill px-5 py-2 shadow-sm">
+                <i class="bi bi-grid-fill me-2"></i>Ajouter un produit
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- LOGIQUE MISE À JOUR EN TEMPS RÉEL (JAVASCRIPT) -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const inputsQuantite = document.querySelectorAll('.input-quantite');
+
+    inputsQuantite.forEach(input => {
+        input.addEventListener('input', function () {
+            const row = this.closest('.produit-row');
+            const prixUnitaire = parseFloat(row.dataset.prixUnitaire);
+            let nouvelleQuantite = parseInt(this.value);
+
+            // Gestion de sécurité des entrées vides ou négatives
+            if (isNaN(nouvelleQuantite) || nouvelleQuantite < 1) {
+                return; // On attend que l'utilisateur saisisse un nombre valide
+            }
+
+            // 1. Mémorisation de l'ancienne valeur pour pouvoir revenir en arrière
+            //    si le serveur refuse la quantité (stock insuffisant).
+            const ancienneQuantite = this.dataset.derniereValeurValide || this.defaultValue;
+
+            // 2. Mise à jour instantanée du sous-total local (Prix * Quantité)
+            const nouveauSousTotal = prixUnitaire * nouvelleQuantite;
+            row.querySelector('.sous-total-valeur').textContent = nouveauSousTotal;
+
+            // 3. Recalcul instantané du total général visible à l'écran
+            calculerTotalGeneral();
+
+            // 4. Envoi transparent de la nouvelle quantité au serveur Django (AJAX)
+            const produitId = row.dataset.produitId;
+            const form = row.querySelector('.cart-update-form');
+            const url = form.getAttribute('action');
+            const formData = new FormData(form);
+            formData.set('quantite', nouvelleQuantite);
+
+            const alertBox = document.getElementById('cart-ajax-alert');
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                if (ok && data.ok) {
+                    // Quantité acceptée par le serveur : on la mémorise comme référence
+                    input.dataset.derniereValeurValide = nouvelleQuantite;
+                    if (alertBox) alertBox.classList.add('d-none');
+                } else {
+                    // Stock insuffisant : on affiche le message d'indisponibilité renvoyé
+                    // par le serveur et on annule visuellement le changement.
+                    if (alertBox) {
+                        alertBox.textContent = data.message || "Quantité indisponible en stock.";
+                        alertBox.classList.remove('d-none');
+                    }
+                    input.value = ancienneQuantite;
+                    row.querySelector('.sous-total-valeur').textContent = prixUnitaire * ancienneQuantite;
+                    calculerTotalGeneral();
+                }
+            })
+            .catch(error => console.error("Erreur réseau :", error));
+        });
+
+        // Sécurité si l'utilisateur quitte le champ en le laissant vide
+        input.addEventListener('blur', function() {
+            if (this.value === '' || parseInt(this.value) < 1) {
+                this.value = 1;
+                this.dispatchEvent(new Event('input'));
+            }
+        });
+    });
+
+    // Fonction de sommation de toutes les lignes
+    function calculerTotalGeneral() {
+        let total = 0;
+        document.querySelectorAll('.sous-total-valeur').forEach(span => {
+            total += parseFloat(span.textContent) || 0;
+        });
+        const totalPanierSpan = document.getElementById('total-panier');
+        if (totalPanierSpan) {
+            totalPanierSpan.textContent = total;
+        }
+    }
+});
+</script>
+{% endblock %}
+
+

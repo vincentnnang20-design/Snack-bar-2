@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Connexion - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0"><i class="bi bi-person-circle text-warning"></i> Connexion FriscoClub</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold">Nom d'utilisateur</label>
+                        <input type="text" name="username" class="form-control" id="username" required placeholder="Ex: gérant1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-bold">Mot de passe</label>
+                        <input type="password" name="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100 fw-bold mt-3">Se connecter</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-link text-warning fw-bold" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                        Mot de passe oublié ?
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">Réinitialisation du mot de passe</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                {% if reset_step == 'verify' %}
+                    <div class="alert alert-info">Étape 2 : entrez le code reçu par email.</div>
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if 'Code de vérification' in message|safe %}
+                                <div class="alert alert-danger" role="alert">{{ message }}</div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="verify_code" value="1">
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">{{ verify_form.username.label }}</label>
+                            <input type="text" name="username" value="{{ reset_username|default:verify_form.username.value|default:'' }}" class="form-control" id="id_verify_username">
+                        </div>
+                        {% if verify_form.errors %}
+                            <div class="text-danger small mb-2">{{ verify_form.non_field_errors }}</div>
+                        {% endif %}
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">{{ verify_form.code.label }}</label>
+                            {{ verify_form.code }}
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 fw-bold recovery-submit-btn" data-loading-text="Vérification...">
+                            <span class="btn-text">Vérifier le code</span>
+                            <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                {% elif reset_step == 'new_password' %}
+                    <div class="alert alert-success">Étape 3 : définissez votre nouveau mot de passe.</div>
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="new_password" value="1">
+                        {{ new_password_form.username }}
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">{{ new_password_form.password.label }}</label>
+                            {{ new_password_form.password }}
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">{{ new_password_form.password_confirm.label }}</label>
+                            {{ new_password_form.password_confirm }}
+                        </div>
+                        {% if new_password_form.non_field_errors %}
+                            <div class="text-danger small">{{ new_password_form.non_field_errors }}</div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-warning w-100 fw-bold recovery-submit-btn" data-loading-text="Réinitialisation...">
+                            <span class="btn-text">Réinitialiser</span>
+                            <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-light border">Étape 1 : entrez votre nom d’utilisateur pour recevoir le code.</div>
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="forgot_password" value="1">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ forgot_form.username.label }}</label>
+                            {{ forgot_form.username }}
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100 fw-bold recovery-submit-btn" data-loading-text="Envoi...">
+                            <span class="btn-text">Envoyer le code</span>
+                            <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if reset_step != 'start' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('forgotPasswordModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    });
+</script>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.recovery-submit-btn').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                const spinner = button.querySelector('.spinner-border');
+                const text = button.querySelector('.btn-text');
+                if (spinner && text) {
+                    text.textContent = button.dataset.loadingText || 'Traitement...';
+                    spinner.classList.remove('d-none');
+                    button.classList.add('disabled');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

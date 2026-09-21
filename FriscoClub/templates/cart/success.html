@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Commande Confirmée - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-5">
+    <div class="col-md-6 text-center">
+        <div class="card border-0 shadow-sm p-4">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill text-success display-1 mb-3"></i>
+                <h2 class="fw-bold">Commande Validée !</h2>
+                <p class="text-muted">La commande <strong>#{{ commande.id }}</strong> a été transmise en cuisine / au bar.</p>
+
+                <div class="bg-light p-3 rounded text-start mb-4">
+                    <p class="mb-1"><strong>Table :</strong> {{ commande.numero_table.numero_table }}</p>
+                    <p class="mb-1"><strong>Type :</strong> {{ commande.nature }}</p>
+                    <p class="mb-1"><strong>Client :</strong> {% if commande.Clients_id %}{{ commande.Clients_id.nom_client }}{% else %}Anonyme{% endif %}</p>
+                    <p class="mb-0"><strong>Montant Total :</strong> <span class="text-success fw-bold">{{ commande.Montant_Total }} FCFA</span></p>
+                </div>
+
+                <a href="{% url 'catalogue' %}" class="btn btn-warning fw-bold px-4">
+                    <i class="bi bi-plus-circle me-1"></i> Nouvelle commande
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

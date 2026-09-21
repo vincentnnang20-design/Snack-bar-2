@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Ajouter un produit - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-8">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+                <div>
+                    <span class="badge bg-warning text-dark fw-bold mb-2">Gestion du stock</span>
+                    <h1 class="h2 fw-bold mb-2">Ajouter un produit</h1>
+                    <p class="text-muted mb-0">Complétez les informations pour enregistrer un produit professionnel et homogène avec la charte FriscoClub.</p>
+                </div>
+                <a href="{% url 'stock_list_html' %}" class="btn btn-outline-dark btn-sm rounded-pill shadow-sm">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Retour à la gestion
+                </a>
+            </div>
+
+            <div class="card card-modern border-0 shadow-sm overflow-hidden">
+                <div class="bg-dark px-4 py-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                        <div>
+                            <h2 class="h5 text-white fw-bold mb-1">Formulaire produit</h2>
+                            <p class="text-white-50 mb-0">Saisissez les éléments principaux et validez pour l’ajouter au catalogue.</p>
+                        </div>
+                        <span class="badge bg-warning text-dark fw-semibold">Design uniforme</span>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label" for="{{ form.nom.id_for_label }}">Nom du produit</label>
+                                {{ form.nom }}
+                                {% if form.nom.errors %}
+                                    <div class="text-danger small mt-1">{{ form.nom.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label" for="{{ form.Cathegories.id_for_label }}">Catégorie</label>
+                                {{ form.Cathegories }}
+                                {% if form.Cathegories.errors %}
+                                    <div class="text-danger small mt-1">{{ form.Cathegories.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label" for="{{ form.Genres.id_for_label }}">Genre</label>
+                                {{ form.Genres }}
+                                {% if form.Genres.errors %}
+                                    <div class="text-danger small mt-1">{{ form.Genres.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-sm-6">
+                                <label class="form-label" for="{{ form.Prix_vente.id_for_label }}">Prix de vente</label>
+                                <div class="input-group input-group-lg shadow-sm rounded-4 overflow-hidden">
+                                    <span class="input-group-text bg-light border-0 text-secondary">FCFA</span>
+                                    {{ form.Prix_vente }}
+                                </div>
+                                {% if form.Prix_vente.errors %}
+                                    <div class="text-danger small mt-1">{{ form.Prix_vente.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-sm-6 d-flex flex-column justify-content-end">
+                                <div class="form-check form-switch mt-4 pt-1">
+                                    {{ form.is_available }}
+                                    <label class="form-check-label fw-semibold" for="{{ form.is_available.id_for_label }}">Disponible</label>
+                                </div>
+                                {% if form.is_available.errors %}
+                                    <div class="text-danger small mt-1">{{ form.is_available.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" for="{{ form.image.id_for_label }}">Photo du produit</label>
+                                {{ form.image }}
+                                <div class="form-text">JPG/PNG recommandé. Taille max 2 Mo.</div>
+                                {% if form.image.errors %}
+                                    <div class="text-danger small mt-1">{{ form.image.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label" for="id_initial_stock">Quantité initiale</label>
+                                <input type="number" name="initial_stock" id="id_initial_stock" min="0" class="form-control form-control-lg shadow-sm" value="0">
+                                <div class="form-text">Valeur de départ du stock à l’ajout.</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 d-flex flex-column flex-sm-row gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg rounded-pill flex-fill shadow-sm">
+                                <i class="bi bi-save2-fill me-2"></i> Enregistrer le produit
+                            </button>
+                            <a href="{% url 'stock_list_html' %}" class="btn btn-outline-dark btn-lg rounded-pill flex-fill shadow-sm">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

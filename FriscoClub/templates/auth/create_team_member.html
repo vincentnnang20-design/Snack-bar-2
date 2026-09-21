@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un membre de l’équipe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h2 class="fw-bold mb-3"><i class="bi bi-person-plus-fill text-warning"></i> Ajouter un membre de l’équipe</h2>
+                <p class="text-muted">Cet espace est réservé à l’administrateur. Le mot de passe sera haché automatiquement.</p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h5 class="fw-bold">Créer un membre</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="create_member" value="1">
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.username.label }}</label>
+                                {{ team_form.username }}
+                                {% if team_form.username.errors %}
+                                    <div class="text-danger small">{{ team_form.username.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.email.label }}</label>
+                                {{ team_form.email }}
+                                {% if team_form.email.errors %}
+                                    <div class="text-danger small">{{ team_form.email.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.password.label }}</label>
+                                {{ team_form.password }}
+                                {% if team_form.password.errors %}
+                                    <div class="text-danger small">{{ team_form.password.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.password_confirm.label }}</label>
+                                {{ team_form.password_confirm }}
+                                {% if team_form.password_confirm.errors %}
+                                    <div class="text-danger small">{{ team_form.password_confirm.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.role.label }}</label>
+                                {{ team_form.role }}
+                                {% if team_form.role.errors %}
+                                    <div class="text-danger small">{{ team_form.role.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ team_form.phone.label }}</label>
+                                {{ team_form.phone }}
+                                {% if team_form.phone.errors %}
+                                    <div class="text-danger small">{{ team_form.phone.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn btn-warning fw-bold">Créer le compte</button>
+                        </form>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h5 class="fw-bold">Réinitialiser le mot de passe</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="reset_password" value="1">
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ reset_form.username.label }}</label>
+                                {{ reset_form.username }}
+                                {% if reset_form.username.errors %}
+                                    <div class="text-danger small">{{ reset_form.username.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ reset_form.new_password.label }}</label>
+                                {{ reset_form.new_password }}
+                                {% if reset_form.new_password.errors %}
+                                    <div class="text-danger small">{{ reset_form.new_password.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">{{ reset_form.new_password_confirm.label }}</label>
+                                {{ reset_form.new_password_confirm }}
+                                {% if reset_form.new_password_confirm.errors %}
+                                    <div class="text-danger small">{{ reset_form.new_password_confirm.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-warning fw-bold">Réinitialiser</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

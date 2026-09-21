@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Validation de la Commande - FriscoClub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-2">
+    <div class="col-md-11 col-lg-10">
+        <h2 class="fw-bold mb-4">
+            <i class="bi bi-credit-card-2-front text-warning me-2"></i>Finaliser la commande
+        </h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row g-4">
+            <!-- Formulaire d'information et paiement -->
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm p-4">
+                    <form action="{% url 'checkout' %}" method="post">
+                        {% csrf_token %}
+                        
+                        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom border-light">
+                            <i class="bi bi-sliders text-warning me-2"></i>1. Options de Service
+                        </h5>
+
+                        <!-- Nature de la commande -->
+                        <div class="mb-3">
+                            <label for="nature" class="form-label fw-bold small text-uppercase tracking-wide">Type de commande</label>
+                            <select name="nature" id="nature" class="form-select" required onchange="toggleTableRequired()">
+                                <option value="Sur place" selected>Sur place</option>
+                                <option value="A emporter">À emporter</option>
+                                <option value="Livraison">Livraison</option>
+                            </select>
+                        </div>
+
+                        <!-- Choix de la Table -->
+                        <div class="mb-3 transition-all" id="table-container">
+                            <label for="table_id" class="form-label fw-bold small text-uppercase tracking-wide">Numéro de Table</label>
+                            <select name="table_id" id="table_id" class="form-select" required>
+                                <option value="" selected disabled>-- Choisir une table --</option>
+                                {% for table in tables %}
+                                    <option value="{{ table.id }}">Table N° {{ table.numero_table }} (Capacité: {{ table.capacite }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Nom du client (optionnel) -->
+                        <div class="mb-4">
+                            <label for="nom_client" class="form-label fw-bold small text-uppercase tracking-wide">Nom du Client <span class="text-muted fw-normal">(Optionnel)</span></label>
+                            <input type="text" name="nom_client" id="nom_client" class="form-control" placeholder="Ex: Jean Dupont">
+                        </div>
+
+                        <h5 class="fw-bold text-dark mb-3 pt-2 pb-2 border-bottom border-light">
+                            <i class="bi bi-wallet2 text-warning me-2"></i>2. Mode de Règlement
+                        </h5>
+
+                        <!-- Sélecteur de méthode (Style Boutons Radio Premium) -->
+                        <div class="row g-3 mb-4">
+                            <!-- Option Mobile Money -->
+                            <div class="col-md-6">
+                                <label class="card h-100 border shadow-sm p-3 method-card active" for="method_momo">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-phone text-warning fs-4"></i>
+                                            <span class="fw-bold text-dark small text-uppercase">Mobile Money</span>
+                                        </div>
+                                        <input class="form-check-input text-warning" type="radio" name="payment_method" id="method_momo" value="momo" checked>
+                                    </div>
+                                    <small class="text-muted fs-7">Orange Money, MTN MoMo...</small>
+                                </label>
+                            </div>
+                            
+                            <!-- Option Cash / Comptoir -->
+                            <div class="col-md-6">
+                                <label class="card h-100 border shadow-sm p-3 method-card" for="method_cash">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-cash-coin text-secondary fs-4"></i>
+                                            <span class="fw-bold text-dark small text-uppercase">Au comptoir</span>
+                                        </div>
+                                        <input class="form-check-input text-warning" type="radio" name="payment_method" id="method_cash" value="cash">
+                                    </div>
+                                    <small class="text-muted fs-7">Règlement en espèces ou TPE auprès du serveur.</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Champ Numéro Mobile Money Dynamique -->
+                        <div id="momo-fields" class="mb-4">
+                            <label for="phone_number" class="form-label fw-bold small text-uppercase tracking-wide">Numéro de Téléphone pour le retrait</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                                <input type="tel" id="phone_number" name="phone_number" class="form-control" placeholder="Ex: 6xx xxx xxx" required>
+                            </div>
+                            <div class="form-text text-muted fs-7">Une demande de confirmation PIN push sera envoyée sur ce numéro.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning w-100 fw-bold mt-2 py-2.5 shadow-sm btn-lg">
+                            <i class="bi bi-shield-check me-2"></i>Confirmer la commande
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Récapitulatif à droite -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 20px; z-index: 10;">
+                    <div class="card-header bg-dark text-white fw-bold py-3">
+                        <i class="bi bi-receipt me-2 text-warning"></i>Résumé de la commande
+                    </div>
+                    <div class="overflow-auto" style="max-height: 280px;">
+                        <ul class="list-group list-group-flush">
+                            {% for item in cart %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                                    <div>
+                                        <h6 class="my-0 fw-bold text-dark small">{{ item.produit.nom }}</h6>
+                                        <small class="text-muted">Qté: {{ item.quantite }} × {{ item.prix }} FCFA</small>
+                                    </div>
+                                    <span class="fw-bold text-dark">{{ item.total_prix }} FCFA</span>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item text-center py-4 text-muted">Votre panier est vide</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between bg-light fw-bold fs-5 py-3 border-top-0">
+                        <span class="text-dark fs-6">Total Général</span>
+                        <span class="text-success fw-extrabold">{{ cart.get_total_price }} FCFA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts de contrôle dynamiques -->
+<script>
+function toggleTableRequired() {
+    const natureSelect = document.getElementById('nature');
+    const tableSelect = document.getElementById('table_id');
+    const tableContainer = document.getElementById('table-container');
+
+    if (natureSelect.value === 'Sur place') {
+        tableSelect.required = true;
+        tableContainer.style.opacity = '1';
+        tableContainer.style.pointerEvents = 'auto';
+        tableSelect.disabled = false;
+    } else {
+        tableSelect.required = false;
+        tableSelect.value = '';
+        tableContainer.style.opacity = '0.4';
+        tableContainer.style.pointerEvents = 'none';
+        tableSelect.disabled = true;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const radioMomo = document.getElementById('method_momo');
+    const radioCash = document.getElementById('method_cash');
+    const momoFields = document.getElementById('momo-fields');
+    const inputPhone = document.getElementById('phone_number');
+    const cards = document.querySelectorAll('.method-card');
+
+    function togglePaymentFields() {
+        cards.forEach(c => c.classList.remove('active', 'border-warning'));
+        
+        if (radioMomo.checked) {
+            momoFields.style.display = 'block';
+            inputPhone.setAttribute('required', 'required');
+            radioMomo.closest('.method-card').classList.add('active', 'border-warning');
+        } else if (radioCash.checked) {
+            momoFields.style.display = 'none';
+            inputPhone.removeAttribute('required');
+            radioCash.closest('.method-card').classList.add('active', 'border-warning');
+        }
+    }
+
+    radioMomo.addEventListener('change', togglePaymentFields);
+    radioCash.addEventListener('change', togglePaymentFields);
+    
+    // Init au chargement
+    togglePaymentFields();
+    toggleTableRequired();
+});
+</script>
+
+<style>
+    .tracking-wide { letter-spacing: 0.05em; }
+    .fs-7 { font-size: 0.76rem; }
+    .fw-extrabold { font-weight: 800; }
+    .transition-all { transition: all 0.25s ease-in-out; }
+    
+    .method-card {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 2px solid #dee2e6 !important;
+    }
+    .method-card:hover {
+        transform: translateY(-2px);
+    }
+    .method-card.active {
+        border-color: #ffc107 !important;
+        background-color: rgba(255, 193, 7, 0.02);
+    }
+</style>
+{% endblock %}
+

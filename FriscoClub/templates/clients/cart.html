@@ -1,0 +1,136 @@
+{% extends 'clients/client_base.html' %}
+
+{% block title %}Mon Panier — Espace Client FriscoClub{% endblock %}
+
+{% block content %}
+<div class="section-title mb-3"><i class="bi bi-cart3 text-warning"></i> Mon Panier</div>
+
+<div id="cart-ajax-alert" class="alert alert-danger d-none py-2 px-3 small rounded-3" role="alert"></div>
+
+{% if cart|length %}
+<div class="d-flex flex-column gap-2 mb-3">
+    {% for item in cart %}
+    <div class="d-flex align-items-center gap-2 bg-white rounded-4 p-2 shadow-sm cart-line" data-produit-id="{{ item.produit.id }}" data-prix-unitaire="{{ item.prix }}">
+        <div style="width:52px;height:52px;flex:0 0 auto;" class="rounded-3 overflow-hidden bg-light d-flex align-items-center justify-content-center">
+            {% if item.produit.image %}
+                <img src="{{ item.produit.image.url }}" alt="{{ item.produit.nom }}" class="w-100 h-100" style="object-fit:cover;">
+            {% else %}
+                <i class="bi bi-cup-straw text-secondary"></i>
+            {% endif %}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+            <div class="fw-bold small text-truncate">{{ item.produit.nom }}</div>
+            <div class="text-muted" style="font-size:0.72rem;">{{ item.prix }} FCFA / unité</div>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary qty-btn" data-delta="-1" style="width:28px;height:28px;padding:0;">−</button>
+            <input type="number" class="form-control form-control-sm text-center input-quantite" value="{{ item.quantite }}" min="1" style="width:42px;">
+            <button type="button" class="btn btn-sm btn-outline-secondary qty-btn" data-delta="1" style="width:28px;height:28px;padding:0;">+</button>
+        </div>
+        <div class="text-end" style="min-width:64px;">
+            <div class="fw-bold small sous-total-valeur">{{ item.total_prix }}</div>
+            <a href="{% url 'client_cart_remove' item.produit.id %}" class="text-danger" style="font-size:0.75rem;"><i class="bi bi-trash"></i></a>
+        </div>
+        <form action="{% url 'client_cart_update' item.produit.id %}" method="post" class="d-none cart-update-form">
+            {% csrf_token %}
+            <input type="hidden" name="quantite" value="{{ item.quantite }}">
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="bg-white rounded-4 p-3 shadow-sm mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="fw-bold">Total</span>
+        <span class="fw-bold text-success" id="total-panier-wrap"><span id="total-panier">{{ cart.get_total_price }}</span> FCFA</span>
+    </div>
+</div>
+
+<a href="{% url 'client_checkout' %}" class="btn btn-warning w-100 fw-bold py-2 rounded-3 shadow-sm">
+    <i class="bi bi-check-circle-fill me-1"></i> Valider la commande
+</a>
+<a href="{% url 'client_catalogue' %}" class="btn btn-outline-secondary w-100 mt-2 rounded-3">
+    <i class="bi bi-arrow-left me-1"></i> Continuer mes achats
+</a>
+
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-cart-x display-4 text-warning opacity-75 mb-3 d-block"></i>
+    <p class="mb-3 small">Votre panier est vide.</p>
+    <a href="{% url 'client_catalogue' %}" class="btn btn-warning btn-sm rounded-pill px-4">
+        <i class="bi bi-grid-fill me-1"></i> Voir la carte
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const alertBox = document.getElementById('cart-ajax-alert');
+
+    function calculerTotalGeneral() {
+        let total = 0;
+        document.querySelectorAll('.sous-total-valeur').forEach(span => {
+            total += parseFloat(span.textContent) || 0;
+        });
+        const totalSpan = document.getElementById('total-panier');
+        if (totalSpan) totalSpan.textContent = total;
+    }
+
+    function envoyerMiseAJour(line, nouvelleQuantite, ancienneQuantite, prixUnitaire) {
+        const form = line.querySelector('.cart-update-form');
+        const url = form.getAttribute('action');
+        const formData = new FormData(form);
+        formData.set('quantite', nouvelleQuantite);
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+            if (ok && data.ok) {
+                if (alertBox) alertBox.classList.add('d-none');
+            } else {
+                if (alertBox) {
+                    alertBox.textContent = data.message || 'Quantité indisponible en stock.';
+                    alertBox.classList.remove('d-none');
+                }
+                line.querySelector('.input-quantite').value = ancienneQuantite;
+                line.querySelector('.sous-total-valeur').textContent = prixUnitaire * ancienneQuantite;
+                calculerTotalGeneral();
+            }
+        })
+        .catch(() => {});
+    }
+
+    document.querySelectorAll('.cart-line').forEach(line => {
+        const input = line.querySelector('.input-quantite');
+        const prixUnitaire = parseFloat(line.dataset.prixUnitaire);
+
+        function appliquer(nouvelleQuantite) {
+            const ancienneQuantite = input.dataset.derniereValeurValide || input.defaultValue;
+            if (isNaN(nouvelleQuantite) || nouvelleQuantite < 1) return;
+            input.value = nouvelleQuantite;
+            line.querySelector('.sous-total-valeur').textContent = prixUnitaire * nouvelleQuantite;
+            calculerTotalGeneral();
+            envoyerMiseAJour(line, nouvelleQuantite, ancienneQuantite, prixUnitaire);
+            input.dataset.derniereValeurValide = nouvelleQuantite;
+        }
+
+        line.querySelectorAll('.qty-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const delta = parseInt(this.dataset.delta, 10);
+                appliquer(parseInt(input.value, 10) + delta);
+            });
+        });
+
+        input.addEventListener('change', function () {
+            appliquer(parseInt(this.value, 10));
+        });
+    });
+});
+</script>
+{% endblock %}

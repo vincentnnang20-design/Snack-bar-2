@@ -1,0 +1,750 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FriscoClub{% endblock %}</title>
+
+    <script>
+        // Restore the layout before the first paint to prevent the sidebar from
+        // flashing open and shifting the page after a navigation.
+        try {
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                document.documentElement.classList.add('sidebar-is-collapsed');
+            }
+        } catch (error) {
+            // The interface remains usable when storage is unavailable.
+        }
+    </script>
+
+    <!-- Google Fonts (Poppins pour les titres / Inter pour le texte) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Typographie et Styles personnalisés -->
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #212529;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6, .navbar-brand, .btn, .nav-link {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-light min-vh-100">
+
+    <div class="app-shell">
+        <aside id="sidebar" class="sidebar bg-dark text-white shadow-sm d-flex flex-column justify-content-between">
+            <div>
+                <div class="d-flex align-items-center justify-content-between px-3 py-3 border-bottom border-secondary">
+                    <a class="d-flex align-items-center text-decoration-none text-warning fw-bold fs-5" href="{% url 'acceuil' %}">
+                        <i class="bi bi-cup-straw me-2"></i>
+                        <span class="brand-text">FriscoClub</span>
+                    </a>
+                    <button id="sidebarToggle" class="btn btn-sm btn-outline-light rounded-circle" type="button" aria-label="Réduire la sidebar" aria-controls="sidebar" aria-expanded="true">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </div>
+
+                <ul class="nav flex-column px-3 mt-3">
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white-50 d-flex align-items-center {% if request.resolver_match.url_name == 'acceuil' %}active text-white fw-bold{% endif %}" href="{% url 'acceuil' %}">
+                            <i class="bi bi-house-door-fill me-2"></i><span class="sidebar-text">Accueil</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-white-50 d-flex align-items-center {% if request.resolver_match.url_name == 'catalogue' %}active text-white fw-bold{% endif %}" href="{% url 'catalogue' %}">
+                            <i class="bi bi-grid-fill me-2"></i><span class="sidebar-text">Carte / Menu</span>
+                        </a>
+                    </li>
+
+                    {% if user.is_authenticated and user.is_gerant %}
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-info fw-bold d-flex align-items-center {% if request.resolver_match.url_name == 'stock_list_html' or request.resolver_match.url_name == 'produit_create' or request.resolver_match.url_name == 'stock_increment' or request.resolver_match.url_name == 'stock_delete' or request.resolver_match.url_name == 'mouvements_stock_html' or request.resolver_match.url_name == 'lignes_commandes_html' %}active text-white{% endif %}" href="{% url 'stock_list_html' %}">
+                            <i class="bi bi-box-seam me-2"></i><span class="sidebar-text">Gestion du Stock</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-info fw-bold d-flex align-items-center {% if request.resolver_match.url_name == 'create_team_member' %}active text-white{% endif %}" href="{% url 'create_team_member' %}">
+                            <i class="bi bi-people-fill me-2"></i><span class="sidebar-text">Ajouter un membre</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link text-info fw-bold d-flex align-items-center {% if request.resolver_match.url_name == 'user_management' or request.resolver_match.url_name == 'user_delete' %}active text-white{% endif %}" href="{% url 'user_management' %}">
+                            <i class="bi bi-person-lines-fill me-2"></i><span class="sidebar-text">Gestion des users</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="px-3 pb-4">
+                {% if user.is_authenticated %}
+                <div class="border-top border-secondary pt-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle bg-warning text-dark d-flex justify-content-center align-items-center me-2" style="width: 36px; height: 36px;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div class="user-meta">
+                            <div class="fw-bold">{{ user.username }}</div>
+                            <div class="small text-white-50">{{ user.role }}</div>
+                        </div>
+                    </div>
+                    <a class="btn btn-outline-light btn-sm w-100" href="{% url 'logout' %}">
+                        <i class="bi bi-box-arrow-right me-2"></i><span class="sidebar-text">Déconnexion</span>
+                    </a>
+                </div>
+                {% else %}
+                <a class="btn btn-warning btn-sm w-100 fw-bold" href="{% url 'login' %}">
+                    <i class="bi bi-box-arrow-in-right me-2"></i><span class="sidebar-text">Se connecter</span>
+                </a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <div class="content-wrapper">
+            <nav class="topbar navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+                <div class="container-fluid px-4">
+                    <div class="ms-auto d-flex align-items-center gap-2">
+                        {% if is_staff_member %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-dark position-relative" type="button" id="notifBell" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-bell-fill"></i>
+                                <span id="notifBadge" class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle {% if not notifications_unread_count %}d-none{% endif %}" style="font-size: 0.62rem;">
+                                    {{ notifications_unread_count|default:0 }}
+                                </span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-0 shadow" style="width: 320px; max-height: 420px; overflow-y: auto;" aria-labelledby="notifBell">
+                                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                                    <span class="fw-bold small">Notifications</span>
+                                    <button type="button" id="notifMarkAll" class="btn btn-link btn-sm p-0 text-decoration-none">Tout marquer lu</button>
+                                </div>
+                                <div id="notifList" class="list-group list-group-flush">
+                                    {% for n in notifications_recentes %}
+                                    <div class="list-group-item small notif-item" data-notif-id="{{ n.id }}">
+                                        <div class="fw-bold">{{ n.titre }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">{{ n.message }}</div>
+                                        <div class="text-muted mt-1" style="font-size: 0.68rem;">{{ n.Date_creation|date:"d/m H:i" }}</div>
+                                    </div>
+                                    {% empty %}
+                                    <div id="notifEmpty" class="text-muted small text-center py-3">Aucune nouvelle commande.</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <a class="btn btn-outline-warning position-relative" href="{% url 'cart_detail' %}">
+                            <i class="bi bi-cart-fill me-1"></i>Panier
+                        </a>
+
+                        {% if user.is_authenticated %}
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle fw-bold text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-fill text-warning me-1"></i>{{ user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'logout' %}">
+                                            <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            <a class="btn btn-sm btn-dark fw-bold" href="{% url 'login' %}">Se connecter</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </nav>
+
+            <main class="flex-grow-1 container-fluid py-4">
+                {% block content %}{% endblock %}
+            </main>
+
+            <div class="bg-dark text-white pt-5 pb-3 border-top border-warning border-opacity-10 mt-auto">
+                <div class="container">
+            <div class="row g-4 text-start">
+                
+                <!-- COLONNE 1 : IDENTITÉ & AMBIANCE -->
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-black text-warning text-uppercase tracking-wider mb-3">
+                        <i class="bi bi-glass-rhum me-2"></i>FriscoClub
+                    </h5>
+                    <p class="text-muted small pe-lg-4">
+                        Une expérience lounge exclusive. Parcourez notre carte, commandez instantanément depuis votre table et profitez de vos moments d'exception.
+                    </p>
+                    <!-- Réseaux Sociaux -->
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center footer-social-icon" title="Instagram">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center footer-social-icon" title="Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="btn btn-sm btn-outline-light rounded-circle d-flex align-items-center justify-content-center footer-social-icon" title="TikTok">
+                            <i class="bi bi-tiktok"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- COLONNE 2 : NAVIGATION ACCÈS RAPIDE -->
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="text-uppercase fw-bold text-light tracking-wide mb-3">Navigation</h6>
+                    <ul class="list-unstyled footer-links m-0">
+                        <li class="mb-2"><a href="{% url 'acceuil' %}" class="text-muted text-decoration-none small transition-all">Accueil</a></li>
+                        <li class="mb-2"><a href="{% url 'catalogue' %}" class="text-muted text-decoration-none small transition-all">La Carte</a></li>
+                        <li class="mb-2"><a href="{% url 'cart_detail' %}" class="text-muted text-decoration-none small transition-all">Mon Panier</a></li>
+                    </ul>
+                </div>
+
+                <!-- COLONNE 3 : HORAIRES & INFOS -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold text-light tracking-wide mb-3">Service & Horaires</h6>
+                    <ul class="list-unstyled text-muted small mb-0">
+                        <li class="mb-2 d-flex align-items-start">
+                            <i class="bi bi-clock text-warning me-2 mt-0.5"></i>
+                            <span>Mercredi - Dimanche : 18h00 - 02h00</span>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="bi bi-geo-alt text-warning me-2"></i>
+                            <span>Zone Lounge, Face VIP</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- COLONNE 4 : STATUT DE LA TABLE CLIENT -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-uppercase fw-bold text-light tracking-wide mb-3">Votre Session</h6>
+                    <p class="text-muted small mb-2">Statut de votre commande en direct :</p>
+                    {% if request.session.numero_table_client %}
+                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill px-3 py-2 fs-7 d-inline-flex align-items-center shadow-sm">
+                            <i class="bi bi-phone-vibrate me-2 animate-pulse"></i> Table connectée : {{ request.session.numero_table_client }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary bg-opacity-10 text-muted border border-secondary border-opacity-25 rounded-pill px-3 py-2 fs-7 d-inline-flex align-items-center">
+                            <i class="bi bi-qr-code-scan me-2"></i> Aucun scan de table
+                        </span>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <!-- LIGNE INFÉRIEURE : COPYRIGHT D'ORIGINE MIS EN VALEUR -->
+            <div class="row pt-4 mt-4 border-top border-secondary border-opacity-20 text-center text-md-between align-items-center g-2">
+                <div class="col-md-6 text-md-start">
+                    <small class="text-muted">&copy; 2026 FriscoClub — Système de Gestion & Commande</small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <ul class="list-inline mb-0 footer-sublinks">
+                        <li class="list-inline-item"><a href="#" class="text-muted text-decoration-none small mx-2 transition-all">Mentions Légales</a></li>
+                        <li class="list-inline-item"><a href="#" class="text-muted text-decoration-none small mx-2 transition-all">CGV</a></li>
+                    </ul>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- STYLES CSS SUR-MESURE DU FOOTER -->
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        .fw-black { font-weight: 900; }
+        .tracking-wider { letter-spacing: 0.12em; }
+        .tracking-wide { letter-spacing: 0.06em; }
+        .fs-7 { font-size: 0.78rem; }
+        
+        /* Effets fluides au survol */
+        .footer-links a:hover {
+            color: #ffc107 !important;
+            padding-left: 5px;
+        }
+        .footer-sublinks a:hover {
+            color: #fff !important;
+        }
+        .transition-all {
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .page-title,
+        .page-subtitle {
+            letter-spacing: 0.01em;
+        }
+
+        .page-title {
+            font-size: clamp(1.8rem, 1.5rem + 1vw, 2.4rem);
+        }
+
+        .page-subtitle {
+            color: #6c757d;
+            max-width: 720px;
+        }
+
+        .card-modern {
+            border-radius: 1.25rem;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .form-label {
+            font-weight: 600;
+        }
+
+        .form-control,
+        .form-select {
+            border-width: 1.4px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.18);
+            border-color: #ffc107;
+        }
+
+        .btn-outline-warning:hover,
+        .btn-outline-warning:focus {
+            background-color: rgba(255, 193, 7, 0.14);
+            border-color: #ffc107;
+            color: #212529;
+        }
+
+        .form-check-label {
+            font-weight: 600;
+        }
+
+        .card-body p,
+        .card-body .form-text {
+            color: #6c757d;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 260px;
+            z-index: 1030;
+            transition: width 0.25s ease;
+            overflow: hidden;
+        }
+
+        .sidebar .nav-link {
+            transition: background 0.2s ease, color 0.2s ease, padding 0.2s ease;
+        }
+
+        .sidebar .sidebar-text {
+            transition: opacity 0.2s ease, width 0.2s ease, margin 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed,
+        html.sidebar-is-collapsed .sidebar {
+            width: 84px;
+        }
+
+        .sidebar.collapsed .nav-link i,
+        html.sidebar-is-collapsed .sidebar .nav-link i {
+            margin-right: 0;
+        }
+
+        .sidebar.collapsed .sidebar-text,
+        html.sidebar-is-collapsed .sidebar .sidebar-text {
+            opacity: 0;
+            width: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed .nav-link.active,
+        .sidebar.collapsed .nav-link:hover,
+        html.sidebar-is-collapsed .sidebar .nav-link.active,
+        html.sidebar-is-collapsed .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .sidebar .nav-link.active {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 0.5rem;
+        }
+
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .brand-text,
+        .sidebar.collapsed .user-meta,
+        html.sidebar-is-collapsed .sidebar .sidebar-text,
+        html.sidebar-is-collapsed .sidebar .brand-text,
+        html.sidebar-is-collapsed .sidebar .user-meta {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-link,
+        html.sidebar-is-collapsed .sidebar .nav-link {
+            justify-content: center;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .content-wrapper {
+            margin-left: 260px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .sidebar.collapsed ~ .content-wrapper,
+        html.sidebar-is-collapsed .content-wrapper {
+            margin-left: 84px;
+        }
+
+        .topbar {
+            z-index: 1020;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                min-height: auto;
+            }
+
+            .sidebar.collapsed,
+            html.sidebar-is-collapsed .sidebar {
+                width: 100%;
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+            }
+
+            .sidebar.collapsed ~ .content-wrapper,
+            html.sidebar-is-collapsed .content-wrapper {
+                margin-left: 0;
+            }
+        }
+        
+        /* Boutons réseaux sociaux circulaires */
+        .footer-social-icon {
+            width: 34px;
+            height: 34px;
+            transition: all 0.3s ease;
+            border-color: rgba(255,255,255,0.15);
+        }
+        .footer-social-icon:hover {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+            color: #212529 !important;
+            transform: translateY(-3px);
+        }
+
+        .page-transition {
+            opacity: 0;
+            transform: translateY(18px);
+            animation: pageFadeIn 0.45s ease forwards;
+        }
+
+        .page-transition-exit {
+            opacity: 0;
+            transform: translateY(-24px);
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .topbar {
+            z-index: 1020;
+        }
+
+        .topbar .container-fluid {
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .topbar .btn,
+        .topbar .nav-link {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                min-height: auto;
+            }
+
+            .sidebar.collapsed,
+            html.sidebar-is-collapsed .sidebar {
+                width: 100%;
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+            }
+
+            .sidebar.collapsed ~ .content-wrapper,
+            html.sidebar-is-collapsed .content-wrapper {
+                margin-left: 0;
+            }
+
+            .topbar .container-fluid {
+                justify-content: space-between;
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .topbar .ms-auto {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                gap: 0.75rem;
+            }
+
+            .topbar .btn {
+                flex: 1 1 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                padding-bottom: 1rem;
+            }
+
+            .sidebar .nav-link {
+                padding-top: 0.85rem;
+                padding-bottom: 0.85rem;
+            }
+
+            .content-wrapper {
+                margin-left: 0;
+            }
+        }
+
+        /* Responsive foundations shared by every page. */
+        img {
+            max-width: 100%;
+        }
+
+        .table-responsive {
+            -webkit-overflow-scrolling: touch;
+            border-radius: 0.75rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar.collapsed .sidebar-text,
+            .sidebar.collapsed .brand-text,
+            .sidebar.collapsed .user-meta,
+            html.sidebar-is-collapsed .sidebar .sidebar-text,
+            html.sidebar-is-collapsed .sidebar .brand-text,
+            html.sidebar-is-collapsed .sidebar .user-meta {
+                display: inline;
+            }
+
+            .sidebar.collapsed .user-meta,
+            html.sidebar-is-collapsed .sidebar .user-meta {
+                display: block;
+            }
+
+            .sidebar .nav {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+                scrollbar-width: thin;
+            }
+
+            .sidebar .nav-item {
+                flex: 0 0 auto;
+                margin-bottom: 0 !important;
+            }
+
+            .sidebar .nav-link {
+                padding: 0.65rem 0.8rem;
+                white-space: nowrap;
+            }
+
+            .sidebar > .px-3.pb-4 {
+                padding-top: 0.75rem;
+                padding-bottom: 1rem !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .content-wrapper main {
+                padding: 1rem !important;
+            }
+
+            .topbar .container-fluid {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .topbar .ms-auto {
+                align-items: stretch;
+            }
+
+            .topbar .dropdown {
+                flex: 1 1 auto;
+            }
+
+            .topbar .dropdown-toggle {
+                display: block;
+                padding: 0.45rem 0;
+                text-align: right;
+            }
+
+            .table-responsive .table {
+                min-width: 640px;
+            }
+
+            .btn,
+            .form-control,
+            .form-select {
+                min-height: 2.75rem;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 16px;
+            }
+        }
+
+        /* Animation du voyant de table connectée */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        .animate-pulse {
+            animation: pulse 2s infinite ease-in-out;
+        }
+    </style>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script JS static personnalisé -->
+    <script src="{% static 'js/script.js' %}"></script>
+    {% if is_staff_member %}
+    <script>
+        // ---------------------------------------------------------------
+        // Notifications personnel : une nouvelle commande client déclenche
+        // une notification (icône cloche + badge). Interrogation
+        // périodique de l'API pour rafraîchir sans recharger la page.
+        // ---------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', function () {
+            const badge = document.getElementById('notifBadge');
+            const list = document.getElementById('notifList');
+            const bell = document.getElementById('notifBell');
+            const markAllBtn = document.getElementById('notifMarkAll');
+            if (!badge || !list) return;
+
+            function csrfToken() {
+                const match = document.cookie.match(/csrftoken=([^;]+)/);
+                return match ? match[1] : '';
+            }
+
+            function renderNotifications(notifications, count) {
+                badge.textContent = count;
+                badge.classList.toggle('d-none', !count);
+
+                if (!notifications.length) {
+                    list.innerHTML = '<div class="text-muted small text-center py-3">Aucune nouvelle commande.</div>';
+                    return;
+                }
+                list.innerHTML = notifications.map(function (n) {
+                    return (
+                        '<div class="list-group-item small notif-item" data-notif-id="' + n.id + '">' +
+                            '<div class="fw-bold">' + n.titre + '</div>' +
+                            '<div class="text-muted" style="font-size: 0.75rem;">' + n.message + '</div>' +
+                            '<div class="text-muted mt-1" style="font-size: 0.68rem;">' + n.date + '</div>' +
+                        '</div>'
+                    );
+                }).join('');
+            }
+
+            function poll() {
+                fetch('{% url "notifications_poll" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.ok) return;
+                        const previousCount = parseInt(badge.dataset.prevCount || '0', 10);
+                        // Une nouvelle commande vient d'arriver : on met en évidence la cloche.
+                        if (data.count > previousCount) {
+                            bell.classList.add('text-warning');
+                            setTimeout(function () { bell.classList.remove('text-warning'); }, 4000);
+                        }
+                        badge.dataset.prevCount = data.count;
+                        renderNotifications(data.notifications, data.count);
+                    })
+                    .catch(function () { /* silencieux : réessaie au prochain intervalle */ });
+            }
+
+            if (markAllBtn) {
+                markAllBtn.addEventListener('click', function () {
+                    fetch('{% url "notifications_mark_all_read" %}', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+                    }).then(function () { renderNotifications([], 0); });
+                });
+            }
+
+            poll();
+            setInterval(poll, 15000);
+        });
+    </script>
+    {% endif %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            if (!sidebar || !toggle) return;
+
+            const icon = toggle.querySelector('i');
+            const collapsed = document.documentElement.classList.contains('sidebar-is-collapsed');
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                if (icon) icon.className = 'bi bi-chevron-right';
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            toggle.addEventListener('click', function () {
+                sidebar.classList.toggle('collapsed');
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                document.documentElement.classList.toggle('sidebar-is-collapsed', isCollapsed);
+                try {
+                    localStorage.setItem('sidebarCollapsed', isCollapsed);
+                } catch (error) {
+                    // The state simply won't persist when storage is unavailable.
+                }
+                if (icon) icon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+                toggle.setAttribute('aria-expanded', String(!isCollapsed));
+            });
+        });
+    </script>
+</body>
+</html>

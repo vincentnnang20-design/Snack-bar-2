@@ -1,0 +1,68 @@
+{% extends 'clients/client_base.html' %}
+
+{% block title %}La Carte — Espace Client FriscoClub{% endblock %}
+
+{% block content %}
+<form method="get" action="{% url 'client_catalogue' %}" class="position-relative mb-3">
+    {% if cat_filter %}<input type="hidden" name="categorie" value="{{ cat_filter }}">{% endif %}
+    {% if genre_filter %}<input type="hidden" name="genre" value="{{ genre_filter }}">{% endif %}
+    <input type="text" name="q" class="form-control form-control-sm rounded-pill ps-3 pe-5" placeholder="Rechercher une boisson..." value="{{ query }}">
+    <button type="submit" class="btn btn-sm position-absolute top-50 end-0 translate-middle-y me-1 p-1 border-0 bg-transparent text-muted">
+        <i class="bi bi-search"></i>
+    </button>
+</form>
+
+<div class="hchip-row mb-1">
+    <a href="{% url 'client_catalogue' %}" class="btn btn-sm rounded-pill px-3 {% if not cat_filter %}btn-dark{% else %}btn-outline-dark{% endif %}">Tout</a>
+    {% for code, label in categories %}
+    <a href="{% url 'client_catalogue' %}?categorie={{ code|urlencode }}&genre={{ genre_filter|urlencode }}&q={{ query|urlencode }}"
+       class="btn btn-sm rounded-pill px-3 {% if cat_filter == code %}btn-dark{% else %}btn-outline-dark{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+<div class="hchip-row mb-3">
+    <a href="{% url 'client_catalogue' %}?categorie={{ cat_filter|urlencode }}&q={{ query|urlencode }}"
+       class="btn btn-sm rounded-pill px-3 {% if not genre_filter %}btn-warning{% else %}btn-outline-warning{% endif %}">Tous les genres</a>
+    {% for code, label in genres %}
+    <a href="{% url 'client_catalogue' %}?genre={{ code|urlencode }}&categorie={{ cat_filter|urlencode }}&q={{ query|urlencode }}"
+       class="btn btn-sm rounded-pill px-3 {% if genre_filter == code %}btn-warning{% else %}btn-outline-warning{% endif %}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if has_results %}
+    {% for row in rows %}
+    <div class="mb-3">
+        <div class="section-title">{{ row.label }}</div>
+        <!-- Défilement horizontal des produits du genre -->
+        <div class="hscroll-row" aria-label="Produits {{ row.label }} en défilement horizontal">
+            {% for produit in row.produits %}
+            <div class="fc-card">
+                <div class="fc-card-img">
+                    {% if produit.image %}
+                        <img src="{{ produit.image.url }}" alt="{{ produit.nom }}">
+                    {% else %}
+                        <i class="bi bi-cup-straw text-secondary fs-3"></i>
+                    {% endif %}
+                </div>
+                <div class="fc-card-body">
+                    <div class="fc-card-name" title="{{ produit.nom }}">{{ produit.nom }}</div>
+                    <div class="fc-card-price">{{ produit.Prix_vente }} FCFA</div>
+                    <form action="{% url 'client_cart_add' produit.id %}" method="post" class="mt-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="quantite" value="1">
+                        <button type="submit" class="fc-add-btn w-100"><i class="bi bi-plus-lg"></i> Ajouter</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center text-muted py-5">
+        <i class="bi bi-funnel display-6 mb-2 d-block"></i>
+        <p class="small mb-2">Aucun produit ne correspond à votre recherche.</p>
+        <a href="{% url 'client_catalogue' %}" class="btn btn-sm btn-dark rounded-pill px-3">Réinitialiser</a>
+    </div>
+{% endif %}
+{% endblock %}
